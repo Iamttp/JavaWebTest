@@ -1,8 +1,8 @@
 # Servlet 代码笔记
 
-## 基本配置
+## 一、基本配置
 
-Web工程设置
+### Web工程设置
 
 1. 创建javaweb工程 File --> New --> Project...
 
@@ -16,7 +16,7 @@ Web工程设置
 
 6. 配置打包方式Artifacts：点击 Artifacts选项卡，IDEA会为该项目自动创建一个名为“JavaWeb:war exploded”的打包方式，表示 打包成war包，并且是文件展开性的，输出路径为当前项目下的 out 文件夹，保持默认即可。另外勾选下“Build on make”，表示编译的时候就打包部署，勾选“Show content of elements”，表示显示详细的内容列表。
 
-TomCat配置（已配置）
+### TomCat配置（已配置）
 
 1. Run -> Edit Configurations，进入“Run Configurations”窗口，点击"+"-> Tomcat Server -> Local，创建一个新的Tomcat容器
 
@@ -25,7 +25,11 @@ TomCat配置（已配置）
 之后就可以运行，然后访问
 `http://localhost:8080/ServletTest_war_exploded/`
 
-## Servlet 
+* 出现Address localhost:8080 is already in use
+1. cmd中执行netstat -ano 找到0.0.0.0:8080，记住它的PID
+2. 任务管理器-》详细信息-》结束上面PID的任务
+
+## 二、Servlet简介 
 
 部署servlet
 方法一：
@@ -62,3 +66,152 @@ TomCat配置（已配置）
 — 产生相应的响应（HttpServletResponse）
 
 — 关闭连接
+
+## 三、Servlet 监听器
+
+监听器其实就是一个实现特定接口的普通java程序，这个程序专门用于监听另一个java对象的方法调用或属性改变，当被监听对象发生上述事件后，监听器某个方法立即被执行。
+
+### 观察者设计模式(observer设计模式)
+
+* java的事件监听机制涉及到三个组件：事件源、事件监听器、事件对象。
+
+1. 我们一开始会简单地设计一个Person对象，具体代码如下：
+
+```java
+class Person {
+    public void run() {
+        System.out.println("run!!!");
+    }
+    public void eat() {
+        System.out.println("eat!!!");
+    }
+}
+```
+
+2. 对外暴露一个接口。
+
+```java
+/*
+ * 对外暴露一个接口，别人实现这个接口，我针对这个接口进行调用
+ * 那这个接口里有几个方法呢？
+ * 答：我这个人身上有2个动作想被别人监听，所以我这个接口针对这2个动作定义2个相对应的方法。
+ */
+interface PersonListener {
+    public void dorun();
+    public void doeat();
+}
+```
+
+3. Person的具体代码应为：
+
+```java
+class Person {
+    private PersonListener listener;
+    public void registerListener(PersonListener listener) {
+        this.listener = listener;
+    }
+
+    public void run() {
+        if (listener != null) { // 别人传进来监听器，那就先调用监听器相对应的方法处理一下，再调用自己的方法
+            Even even = new Even(this);
+            this.listener.dorun(even);
+        }
+        System.out.println("run!!!");
+    }
+
+    public void eat() {
+        if (listener != null) {
+            Even even = new Even(this);
+            this.listener.doeat(even);
+        }
+        System.out.println("eat!!!");
+    }
+}
+
+/*
+ * 对外暴露一个接口，别人实现这个接口，我针对这个接口进行调用
+ * 那这个接口里有几个方法呢？
+ * 答：我这个人身上有2个动作想被别人监听，所以我这个接口针对这2个动作定义2个相对应的方法。
+ */
+interface PersonListener {
+    public void dorun(Even even);
+    public void doeat(Even even);
+}
+
+class Even {
+    private Person person;
+    public Even() {
+        super();
+        // TODO Auto-generated constructor stub
+    }
+
+    public Even(Person person) {
+        super();
+        this.person = person;
+    }
+
+    public Person getPerson() {
+        return person;
+    }
+
+    public void setPerson(Person person) {
+        this.person = person;
+    }
+}
+```
+
+4. 经过这样的设计之后，Peron类的对象就可以被其他对象监听了。测试代码如下：
+
+```java
+public class Demo3 {
+
+    public static void main(String[] args) {
+        Person p = new Person();
+        p.registerListener(new MyListener());
+        p.eat();
+        p.run();
+    }
+}
+
+class MyListener implements PersonListener {
+    @Override
+    public void dorun(Even even) {
+        System.out.println(even.getPerson() + "你吃完就跑，有病！！！");
+    }
+
+    @Override
+    public void doeat(Even even) {
+        System.out.println(even.getPerson() + "你天天吃，你就知道吃，你猪啊！！！");
+    }
+}
+```
+
+### 监听ServletContext域对象的创建和销毁
+
+* 当ServletContext对象被创建时，激发contextInitialized (ServletContextEvent sce)方法。
+* 当ServletContext对象被销毁时，激发contextDestroyed(ServletContextEvent sce)方法。
+
+应用：
+1. web应用一启动时，希望启动一些定时器来定时的执行某些任务。只要把启动定时器的代码写到contextInitialized方法里面，这个web应用一启动，定时器就启动了。
+2. 我们以后会学Spring框架，其实Spring的启动代码就是写在一个ServletContext监听器的contextInitialized方法里面的。Spring是一个框架，我们希望web应用一启动的时候，就把Spring框架启动起来。
+
+### 监听HttpSession域对象的创建和销毁
+
+* 创建一个Session时，激发sessionCreated(HttpSessionEvent se)方法。
+* 销毁一个Session时，激发sessionDestroyed(HttpSessionEvent se)方法。
+
+* 创建：用户每一次访问时，服务器创建session。
+* 销毁：如果用户的session30分钟没有使用，服务器就会销毁session，我们在web.xml里面也可以配置session失效时间。
+  
+应用：
+1. 一般来说，用户都会开一个浏览器访问服务器，只要他一访问，服务器就会针对他创建一个session，每个用户就有一个session，在实际开发里面，只要统计内存里面有多少session，就能知道当前有多少在线人数。为了统计当前在线人数，这时可以写一个这样的监听器，只要有一个session被创建就让一个变量count+1，session被销毁就让变量count-1，输出count这个值，就能知道当前有多少在线人数。 
+ 
+### 监听ServletRequest域对象的创建和销毁
+
+* Request对象被创建时，监听器的requestInitialized(ServletRequestEvent sre)方法将会被调用。
+* Request对象被销毁时，监听器的requestDestroyed(ServletRequestEvent sre)方法将会被调用。
+
+应用：
+1. 我们可以在requestInitialized(ServletRequestEvent sre)方法里面加上一句代码：count++，输出count的值，就可以统计网站一天的点击量。
+2.  我们也可以在requestInitialized(ServletRequestEvent sre)方法里面加上一句代码：sre.getServletRequest().getRemoteAddr()。可以知道当前这个请求是由哪个IP发出来的，在后台可以通过这个监听器监听到哪些IP在给你发请求，这样做的目的是为了防止坏人，有些坏人恶意点击，写机器人点击，在后台写这样的一个监听器可以监听到某个时间段有某个IP重复点击，如果发生这种情况，就说明这个人是坏人，就可以屏蔽其IP。
+
