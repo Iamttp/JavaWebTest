@@ -15,11 +15,11 @@
     </servlet-mapping>
 
 
+
     <!--和其它事件监听器略有不同的是，servlet监听器的注册不是直接注册在事件源上，而是由WEB容器负责注册，开发人员只需在web.xml文件中使用<listener>标签配置好监听器，web容器就会自动把监听器注册到事件源中。-->
     <listener>
         <listener-class>MyServletContextListener</listener-class>
     </listener>
-
 
     <listener>
         <listener-class>MyHttpSessionListener</listener-class>
@@ -33,4 +33,26 @@
     <listener>
         <listener-class>MyServletRequestListener</listener-class>
     </listener>
+
+
+
+    <!--定义一个过滤器-->
+    <filter>
+        <!--过滤器的标识名-->
+        <filter-name>DemoFilter</filter-name>
+        <!--过滤器实现类的全限定名-->
+        <filter-class>DemoFilter</filter-class>
+        <!--配置初始化参数-->
+        <init-param>
+            <param-name>encoding</param-name>
+            <param-value>UTF-8</param-value>
+        </init-param>
+    </filter>
+    <!--过滤器的映射配置-->
+    <filter-mapping>
+        <!--过滤器的标识名-->
+        <filter-name>DemoFilter</filter-name>
+        <!--过滤器的URL匹配模式-->
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 </web-app>

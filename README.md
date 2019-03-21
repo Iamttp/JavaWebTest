@@ -22,10 +22,10 @@
 
 2. 在"Name"处输入新的服务名，点击“Application server”后面的“Configure...”，弹出Tomcat Server窗口，选择本地安装的Tomcat目录 -> OK
 
-之后就可以运行，然后访问
-`http://localhost:8080/ServletTest_war_exploded/`
+之后就可以运行，然后访问`http://localhost:8080/ServletTest_war_exploded/`
 
-* 出现Address localhost:8080 is already in use
+出现Address localhost:8080 is already in use
+解决方法：
 1. cmd中执行netstat -ano 找到0.0.0.0:8080，记住它的PID
 2. 任务管理器-》详细信息-》结束上面PID的任务
 
@@ -215,3 +215,25 @@ class MyListener implements PersonListener {
 1. 我们可以在requestInitialized(ServletRequestEvent sre)方法里面加上一句代码：count++，输出count的值，就可以统计网站一天的点击量。
 2.  我们也可以在requestInitialized(ServletRequestEvent sre)方法里面加上一句代码：sre.getServletRequest().getRemoteAddr()。可以知道当前这个请求是由哪个IP发出来的，在后台可以通过这个监听器监听到哪些IP在给你发请求，这样做的目的是为了防止坏人，有些坏人恶意点击，写机器人点击，在后台写这样的一个监听器可以监听到某个时间段有某个IP重复点击，如果发生这种情况，就说明这个人是坏人，就可以屏蔽其IP。
 
+## 四、Servlet 过滤器
+
+![avatar](/Filter.png)
+
+> 过滤器是处于客户端与服务器资源文件之间的一道过滤网，
+>
+> 在访问资源文件之前，通过一系列的过滤器对请求进行修改、判断等
+>
+> 把不符合规则的请求在中途拦截或修改。也可以对响应进行过滤，拦截或修改响应。
+>
+
+* 服务器在加载的时候按：监听器>过滤器>Servlet的顺序加载
+* 过滤器一般用于登录权限验证、资源访问权限控制、敏感词汇过滤、字符编码转换等等操作，便于代码重用，不必每个servlet中还要进行相应的操作。
+
+1. 新建一个类，实现Filter接口
+2. 实现doFilter()方法
+3. 在web.xml中进行配置（参照Servlet配置）
+
+应用：
+1. 通过控制对chain.doFilter的方法的调用，来决定是否需要访问目标资源。
+2. 通过在调用chain.doFilter方法之前，做些处理来达到某些目的。
+3. 通过在调用chain.doFilter方法之后，做些处理来达到某些目的。
